@@ -4,7 +4,6 @@ library(dplyr)
 library(locfit)
 
 getwd()
-setwd("/Users/chenjiarui/Desktop/Mcmaster/Auto Calibration replication project")
 
 #download data
 motor_data <- read.csv("MTPL_data.csv", sep = ";", header = TRUE)
