@@ -91,7 +91,6 @@ p_equal_test <- function(Y, m, B = 500, seed = 123) {
   Ybar <- mean(Y)
   mbar <- mean(m)
   
-  # a_i = Y_i / Ybar - m_i / mbar
   a <- Y / Ybar - m / mbar
   
   # T_n(alpha)
@@ -129,7 +128,6 @@ p_auto_test <- function(Y, m, B = 500, seed = 123) {
   
   n <- length(Y)
   
-  # b_i = Y_i - m_i
   b_i <- Y - m
   
   # A_n(alpha)
@@ -182,8 +180,6 @@ gam2 <- gam(
 )
 
 # Poisson GLM: all 8 features
-
-
 glm1 <- glm(
   claims ~ age + ac + power + gas + brand + area + dens + ct +
     offset(log(expo)),
@@ -191,11 +187,11 @@ glm1 <- glm(
   data = D1
 )
 
+
+
 # Create noisy covariates for noisy GAMs
-
 set.seed(123)
-
-noise_level <- 0.10   # 10% of each variable's empirical SD
+noise_level <- 0.10
 
 D1_noisy <- D1
 D_hat_noisy <- D_hat
@@ -229,10 +225,6 @@ gam2_noise <- gam(
   family = poisson(link = "log"),
   data = D1_noisy
 )
-
-
-
-
 
 
 
@@ -276,6 +268,7 @@ D_hat$freq_gam2_noise <- D_hat$pred_gam2_noise / D_hat$expo
 
 p_equal_test(D_hat$claims, D_hat$pred_gam2_noise)
 p_auto_test(D_hat$claims, D_hat$pred_gam2_noise)
+
 
 
 #build function for CC and LC curve
@@ -366,17 +359,15 @@ plot_CC_LC(
 
 
 
+#we need the correction for GAM1 and GAM1 noise
 
 
-
-# Section 5.4: Auto-calibrating GAM1
-
-# Step 1: get GAM1 and GAM1_noise predictions on D2
+# get GAM1 and GAM1_noise predictions on D2
 # D2 is used to implement auto-calibration
 D2$pred_gam1 <- predict(gam1, newdata = D2, type = "response")
 D2$pred_gam1_noise <- predict(gam1_noise, newdata = D2, type = "response")
 
-# Step 2: build function to choose delta
+# build function to choose delta
 local_poisson_lcv <- function(Y, expo, pred, delta_grid) {
   
   ord <- order(pred)
@@ -491,8 +482,8 @@ abline(v = delta_opt_gam1_noise, lty = 2)
 
 
 
-# Step 3: define local balance correction function
-# For a new predicted value m0, find the closest delta fraction of D2 predictions.
+# define local balance correction function
+# For a new predicted value m_new, find the closest delta fraction of D2 predictions.
 # Then set corrected prediction = average observed claims / average exposure
 # Finally multiply by the new policy's exposure.
 
@@ -523,7 +514,7 @@ local_balance_predict <- function(m_new, expo_new, m_calib, y_calib, expo_calib,
 
 
 
-# Step 4: apply correction to validation set D_hat
+# apply correction to validation set D_hat
 D_hat$pred_gam1_auto <- local_balance_predict(
   m_new = D_hat$pred_gam1,
   expo_new = D_hat$expo,
@@ -534,7 +525,7 @@ D_hat$pred_gam1_auto <- local_balance_predict(
 )
 
 
-# Step 4: apply correction to validation set D_hat
+# apply correction to validation set D_hat
 D_hat$pred_gam1_noise_auto <- local_balance_predict(
   m_new = D_hat$pred_gam1_noise,
   expo_new = D_hat$expo,
@@ -546,14 +537,14 @@ D_hat$pred_gam1_noise_auto <- local_balance_predict(
 
 
 
-# Step 5: draw CC/LC curves for corrected GAM1
+# draw CC/LC curves for corrected GAM1
 plot_CC_LC(
   Y = D_hat$claims,
   pred = D_hat$pred_gam1_auto,
   main = "GAM1 after Auto-calibration"
 )
 
-# Step 5: draw CC/LC curves for corrected GAM1 Noise
+# draw CC/LC curves for corrected GAM1 Noise
 plot_CC_LC(
   Y = D_hat$claims,
   pred = D_hat$pred_gam1_noise_auto,
@@ -561,7 +552,7 @@ plot_CC_LC(
 )
 
 
-# Step 6: compute p-values again for GAM1
+# compute p-values again for GAM1
 p_equal_gam1_auto <- p_equal_test(
   D_hat$claims,
   D_hat$pred_gam1_auto,
@@ -577,7 +568,7 @@ p_auto_gam1_auto <- p_auto_test(
 p_equal_gam1_auto
 p_auto_gam1_auto
 
-# Step 6: compute p-values again for GAM1 Noise
+# compute p-values again for GAM1 Noise
 p_equal_gam1_noise_auto <- p_equal_test(
   D_hat$claims,
   D_hat$pred_gam1_noise_auto,
